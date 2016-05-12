@@ -1,0 +1,10 @@
+sudo: required
+
+services:
+  - docker
+
+before_script:
+  - git clone https://github.com/mesoscloud/app-tools.git
+
+script:
+  - app-tools/bin/build

@@ -1,0 +1,74 @@
+global
+    daemon
+    maxconn 4096
+
+defaults
+    mode http
+    timeout connect 10s
+    timeout client 1m
+    timeout server 1m
+    timeout tunnel 1h
+
+frontend http-in80
+    bind *:80
+
+{% for app in apps %}
+{% for portMapping in app.container.docker.portMappings %}
+
+{% if app.labels.mode is undefined %}
+    acl host_{{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }} hdr_beg(host) -i {{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }}.
+    use_backend {{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }}{{ portMapping.servicePort }} if host_{{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }}
+{% endif %}
+
+{% endfor %}
+{% endfor %}
+
+frontend http-in443
+    bind *:443 ssl crt /etc/haproxy/site.pem
+
+{% for app in apps %}
+{% for portMapping in app.container.docker.portMappings %}
+
+{% if app.labels.mode is undefined %}
+    acl host_{{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }} hdr_beg(host) -i {{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }}.
+    use_backend {{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }}{{ portMapping.servicePort }} if host_{{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }}
+{% endif %}
+
+{% endfor %}
+{% endfor %}
+
+{% for app in apps %}
+{% for portMapping in app.container.docker.portMappings %}
+
+frontend http-in{{ portMapping.servicePort }}
+    bind *:{{ portMapping.servicePort }}
+
+{% if app.labels.mode is defined %}
+    mode {{ app.labels.mode }}
+{% endif %}
+
+    use_backend {{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }}{{ portMapping.servicePort }}
+
+{% endfor %}
+{% endfor %}
+
+{% for app in apps %}
+{% set i = 0 %}
+{% for portMapping in app.container.docker.portMappings %}
+
+backend {{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }}{{ portMapping.servicePort }}
+
+{% if i == 0 and app.labels.mode is defined %}
+    mode {{ app.labels.mode }}
+{% endif %}
+
+{% for task in app.tasks %}
+
+{% if task.healthCheckResults and task.healthCheckResults[-1].alive %}
+    server server{{ ("%s:%s" % (task.host, task.ports[i])) | regex_replace('[^a-z0-9]', '-') }} {{ task.host }}:{{ task.ports[i] }} check
+{% endif %}
+
+{% endfor %}
+{% set i = i + 1 %}
+{% endfor %}
+{% endfor %}

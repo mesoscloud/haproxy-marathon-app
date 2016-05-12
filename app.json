@@ -1,0 +1,15 @@
+{
+    "id": "/haproxy-marathon-app",
+
+    "cpus": 0.1,
+    "mem": 128.0,
+
+    "container": {
+        "type": "DOCKER",
+        "docker": {
+            "image": "mesoscloud/haproxy-marathon-app",
+
+            "network": "HOST"
+        }
+    }
+}
