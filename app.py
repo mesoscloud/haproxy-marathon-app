@@ -30,9 +30,11 @@ import kazoo.client
 
 def main():
 
+    host = os.getenv('HOST', '127.0.0.1')
+
     logging.basicConfig()
 
-    zk = kazoo.client.KazooClient(hosts=os.getenv('ZK', 'localhost:2181'))
+    zk = kazoo.client.KazooClient(hosts=host + ':2181'))
     zk.start()
 
     #
@@ -43,7 +45,7 @@ def main():
         pass
 
     #
-    marathon = os.getenv('MARATHON', '127.0.0.1:8080')
+    marathon = host + ':8080'
 
     while True:
         apps = []
