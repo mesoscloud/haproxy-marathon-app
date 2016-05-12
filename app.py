@@ -34,7 +34,7 @@ def main():
 
     logging.basicConfig()
 
-    zk = kazoo.client.KazooClient(hosts=host + ':2181'))
+    zk = kazoo.client.KazooClient(hosts=host + ':2181')
     zk.start()
 
     #
