@@ -14,7 +14,7 @@ defaults
 
 frontend http-in{{ portMapping.servicePort }}
 {% if app.labels.network is defined and app.labels.network == 'private' %}
-    bind {{ host }}:{{ portMapping.servicePort }}
+    bind 127.0.0.1:{{ portMapping.servicePort }}
 {% else %}
     bind *:{{ portMapping.servicePort }}
 {% endif %}
