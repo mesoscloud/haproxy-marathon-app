@@ -77,7 +77,7 @@ def main():
             x = f.read()
         template = environment.from_string(x)
 
-        haproxy_cfg = template.render(apps=apps)
+        haproxy_cfg = template.render(apps=apps, host=host)
         haproxy_cfg = re.sub(r'\n{2,}', '\n\n', haproxy_cfg).rstrip() + '\n'
 
         data, stat = zk.get("/haproxy/config")
