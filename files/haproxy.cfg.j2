@@ -9,6 +9,12 @@ defaults
     timeout server 1m
     timeout tunnel 1h
 
+listen private_monitoring
+    bind 127.0.0.1:9999
+    stats enable
+    stats uri /
+    stats refresh 5s
+
 {% for app in apps %}
 {% for portMapping in app.container.docker.portMappings %}
 
