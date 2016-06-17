@@ -6,11 +6,20 @@ import logging
 import os
 import re
 import sys
-import time
 
 import jinja2
 import kazoo.client
 import requests
+import sseclient
+
+# These are the marathon events that we want to pay attention to.
+SIGNIFICANT = [
+    'failed_health_check_event',
+    'health_status_changed_event',
+    'unhealthy_task_kill_event',
+
+    'status_update_event',
+]
 
 
 def main():
@@ -32,7 +41,10 @@ def main():
     #
     marathon = host + ':8080'
 
-    while True:
+    for event in sseclient.SSEClient('http://{0}/v2/events'.format(marathon)):
+        if event.event.rstrip() not in SIGNIFICANT:
+            continue
+
         apps = []
 
         r = requests.get("http://%s/v2/apps" % marathon)
@@ -70,7 +82,6 @@ def main():
         if haproxy_cfg != data.decode('utf-8'):
             print("set", file=sys.stderr)
             zk.set("/haproxy/config", haproxy_cfg.encode('utf-8'))
-        time.sleep(10)
 
 
 if __name__ == '__main__':
