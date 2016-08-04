@@ -15,6 +15,20 @@ listen private_monitoring
     stats uri /
     stats refresh 5s
 
+frontend http-in80
+    bind *:80
+
+{% for app in apps %}
+{% for portMapping in app.container.docker.portMappings %}
+
+{% if app.labels.mode == 'http' or app.labels.mode is undefined %}
+    acl host_{{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }} hdr_beg(host) -i {{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }}.
+    use_backend {{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }}{{ portMapping.servicePort }} if host_{{ app.id | regex_replace('/(.*)$', '\\1') | regex_replace('/', '_') }}
+{% endif %}
+
+{% endfor %}
+{% endfor %}
+
 {% for app in apps %}
 {% for portMapping in app.container.docker.portMappings %}
 
