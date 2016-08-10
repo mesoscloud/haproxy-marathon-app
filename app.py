@@ -41,10 +41,7 @@ def main():
     #
     marathon = host + ':8080'
 
-    for event in sseclient.SSEClient('http://{0}/v2/events'.format(marathon)):
-        if event.event.rstrip() not in SIGNIFICANT:
-            continue
-
+    def update():
         apps = []
 
         r = requests.get("http://%s/v2/apps" % marathon)
@@ -82,6 +79,11 @@ def main():
         if haproxy_cfg != data.decode('utf-8'):
             print("set", file=sys.stderr)
             zk.set("/haproxy/config", haproxy_cfg.encode('utf-8'))
+
+    update()
+    for event in sseclient.SSEClient('http://{0}/v2/events'.format(marathon)):
+        if event.event.rstrip() in SIGNIFICANT:
+            update()
 
 
 if __name__ == '__main__':
