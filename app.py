@@ -31,14 +31,6 @@ def main():
     zk = kazoo.client.KazooClient(hosts=host + ':2181')
     zk.start()
 
-    #
-    zk.ensure_path("/haproxy")
-    try:
-        zk.create("/haproxy/config", b"")
-    except kazoo.exceptions.NodeExistsError:
-        pass
-
-    #
     marathon = host + ':8080'
 
     def update():
@@ -74,11 +66,14 @@ def main():
         haproxy_cfg = template.render(apps=apps)
         haproxy_cfg = re.sub(r'\n{2,}', '\n\n', haproxy_cfg).rstrip() + '\n'
 
-        data, stat = zk.get("/haproxy/config")
-
-        if haproxy_cfg != data.decode('utf-8'):
-            print("set", file=sys.stderr)
-            zk.set("/haproxy/config", haproxy_cfg.encode('utf-8'))
+        try:
+            zk.create("/haproxy/config", haproxy_cfg.encode('utf-8'), makepath=True)
+            print("znode created", file=sys.stderr)
+        except kazoo.exceptions.NodeExistsError:
+            data, stat = zk.get("/haproxy/config")
+            if haproxy_cfg != data.decode('utf-8'):
+                stat = zk.set("/haproxy/config", haproxy_cfg.encode('utf-8'))
+                print("znode updated: {0!r}".format(stat), file=sys.stderr)
 
     update()
     for event in sseclient.SSEClient('http://{0}/v2/events'.format(marathon)):
