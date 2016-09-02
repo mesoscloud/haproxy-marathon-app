@@ -47,6 +47,9 @@ def main():
 
             app = r.json()['app']
 
+            if app['container'] is None:
+                continue
+
             if 'portMappings' not in app['container']['docker']:
                 continue
 
